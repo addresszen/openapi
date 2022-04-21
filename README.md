@@ -38,7 +38,7 @@ npm test
 #### Install
 
 ```bash
-npm install @addresszen/openapi
+npm install --save @addresszen/openapi
 ```
 
 #### Require specs
