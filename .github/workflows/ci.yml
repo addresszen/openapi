@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  - push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Use Node.js 14
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install
+        run: npm install
+
+      - name: Lint spec
+        run: npm run test
+
+      - name: Build
+        run: npm run build
