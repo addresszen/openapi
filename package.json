@@ -11,7 +11,7 @@
     "typescript": "~4.5.4"
   },
   "scripts": {
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
     "semantic-release": "semantic-release --no-ci",
     "start": "openapi preview-docs",
     "replace": "ts-node replace.ts",
