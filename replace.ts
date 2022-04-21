@@ -3,22 +3,24 @@ import { replaceInFile } from "replace-in-file";
 const files = [
   "openapi.ts",
   "dist/openapi.json",
-  "dist/openapi.yaml"
+  "dist/openapi.yaml",
+  "dist/openapi.d.ts",
 ];
 
 const replaces = [
   {
-    from: "api.ideal-postcodes.co.uk",
+    from: /api\.ideal-postcodes\.co.\uk/gi,
     to: "api.addresszen.com",
   },
   {
-    from: "ideal-postcodes.co.uk",
+    from: /ideal-postcodes\.co\.uk/gi,
     to: "addresszen.com",
-  }, {
-    from: "Ideal Postcodes",
-    to: "AddressZen"
-  }
-]
+  },
+  {
+    from: /Ideal\sPostcodes/gi,
+    to: "AddressZen",
+  },
+];
 
 const run = async () => {
   for (const r of replaces) {
