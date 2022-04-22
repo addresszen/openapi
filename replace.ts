@@ -4,7 +4,6 @@ const files = [
   "openapi.ts",
   "dist/openapi.json",
   "dist/openapi.yaml",
-  "dist/openapi.d.ts",
 ];
 
 const replaces = [
