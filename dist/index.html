@@ -20,9 +20,9 @@
         font-family: "Fira Code", monospace;
       }
       .menu-content {
-        background: #05326d !important;
-        background: -webkit-linear-gradient(right, #07489e, #05326d) !important;
-        background: linear-gradient(to left, #07489e, #05326d) !important;
+        background: #7534d0 !important;
+        background: -webkit-linear-gradient(left, #6629bd, #673ba5) !important;
+        background: linear-gradient(to right, #6629bd, #673ba5) !important;
       }
     </style>
   </head>
@@ -31,7 +31,7 @@
     <script src="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js"> </script>
     <script>
       var container = document.getElementById('redoc');
-      Redoc.init("./openapi.json", {"htmlTemplate":"./openapi/index.html","theme":{"sidebar":{"textColor":"#d5dae6","activeBgColor":"#07489e","backgroundColor":"#05326d","activeTextColor":"#FFFFFF"},"typography":{"code":{"fontFamily":"Fira Code, monospace","fontSize":"13px","backgroundColor":"rgba(38, 50, 56, 0.05)","color":"#e53935"},"headings":{"fontFamily":"Lato, sans-serif"},"fontFamily":"Lato, sans-serif"},"colors":{"primary":{"main":"#32329f"}}}}, container)
+      Redoc.init("./openapi.json", {"htmlTemplate":"./openapi/index.html","theme":{"sidebar":{"textColor":"#f8f8ff","activeBgColor":"#000000","backgroundColor":"#6629bd","activeTextColor":"#f8f8ff"},"typography":{"code":{"fontFamily":"Fira Code, monospace","fontSize":"13px","backgroundColor":"rgba(38, 50, 56, 0.05)","color":"#e53935"},"headings":{"fontFamily":"Lato, sans-serif"},"fontFamily":"Lato, sans-serif"},"colors":{"primary":{"main":"#7534d0"}}}}, container)
     </script>
   </body>
 </html>
