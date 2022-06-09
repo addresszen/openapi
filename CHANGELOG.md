@@ -1,3 +1,15 @@
+# [3.0.0](https://github.com/addresszen/openapi/compare/2.0.3...3.0.0) (2022-06-09)
+
+
+### Features
+
+* **deps:** bump @ideal-postcodes/openapi from 2.1.1 to 3.0.0 ([#11](https://github.com/addresszen/openapi/issues/11)) ([dedb7fc](https://github.com/addresszen/openapi/commit/dedb7fcc94fcd3f881f08269dcf336661a220529))
+
+
+### BREAKING CHANGES
+
+* **deps:** Bumps API to v3
+
 ## [2.0.3](https://github.com/addresszen/openapi/compare/2.0.2...2.0.3) (2022-06-08)
 
 
