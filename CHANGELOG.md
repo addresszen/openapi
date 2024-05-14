@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/addresszen/openapi/compare/3.1.0...3.2.0) (2024-05-14)
+
+
+### Features
+
+* **Spec:** Update spec to 4.6.0 ([125b828](https://github.com/addresszen/openapi/commit/125b828fe1df573186f024aa5aa4e5e5ccfca952))
+
 # [3.1.0](https://github.com/addresszen/openapi/compare/3.0.0...3.1.0) (2022-07-26)
 
 
