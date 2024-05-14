@@ -27,7 +27,7 @@ replace:
 
 ## Compile typescript
 .PHONY: compile
-build:
+compile:
 	npm run build
 
 ## How to use this Makefile
