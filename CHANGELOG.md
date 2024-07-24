@@ -1,3 +1,10 @@
+# [3.3.0](https://github.com/addresszen/openapi/compare/3.2.0...3.3.0) (2024-07-24)
+
+
+### Features
+
+* **Release:** Bump spec to latest ([cff75ed](https://github.com/addresszen/openapi/commit/cff75eda89961bdab58aae348e936f8ce5da82bd))
+
 # [3.2.0](https://github.com/addresszen/openapi/compare/3.1.0...3.2.0) (2024-05-14)
 
 
