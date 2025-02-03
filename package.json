@@ -57,7 +57,7 @@
   ],
   "dependencies": {
     "@ideal-postcodes/openapi": "4.10.1",
-    "replace-in-file": "~6.3.2",
+    "replace-in-file": "~8.3.0",
     "ts-node": "~10.7.0"
   }
 }
