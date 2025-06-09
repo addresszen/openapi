@@ -56,7 +56,7 @@
     "Address Lookup"
   ],
   "dependencies": {
-    "@ideal-postcodes/openapi": "4.10.1",
+    "@ideal-postcodes/openapi": "4.12.0",
     "replace-in-file": "~6.3.2",
     "ts-node": "~10.7.0"
   }
