@@ -1,7 +1,7 @@
 {
   "name": "@addresszen/openapi",
   "description": "AddressZen OpenAPI v3 specifications",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "devDependencies": {
     "@cablanchard/semantic-release": "~2.0.0",
     "@cablanchard/tsconfig": "~2.0.0",
