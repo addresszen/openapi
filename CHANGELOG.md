@@ -1,3 +1,11 @@
+# [3.4.0](https://github.com/addresszen/openapi/compare/3.3.0...3.4.0) (2025-07-22)
+
+
+### Features
+
+* **Coverage:** Global data improvements ([da8b198](https://github.com/addresszen/openapi/commit/da8b198f35bdc7f43fd96e718c378962a6af8c07))
+* **spec:** Update OpenAPI specification to latest version ([2439dec](https://github.com/addresszen/openapi/commit/2439decd7d021a594fba0d6e11fcaa14e3539596))
+
 # [3.3.0](https://github.com/addresszen/openapi/compare/3.2.0...3.3.0) (2024-07-24)
 
 
