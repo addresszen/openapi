@@ -13,7 +13,8 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "semantic-release": "semantic-release --no-ci",
-    "start": "redocly preview",
+    "start": "redocly preview -d dist",
+    "dev": "redocly preview",
     "replace": "ts-node replace.ts",
     "build": "tsc",
     "test": "redocly lint dist/openapi.yaml && redocly lint dist/openapi.json"
