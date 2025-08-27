@@ -20,3 +20,4 @@ coverage
 docs
 public
 .claude
+dist/index.html
