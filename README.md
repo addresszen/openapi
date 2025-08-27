@@ -47,4 +47,4 @@ JSON and YAML specs can be accessed at `node_modules/@addresszen/openapi/dist/op
 
 ## Licence
 
-MIT
+Copyright IDDQD Limited
