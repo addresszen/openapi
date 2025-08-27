@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AddressZen API Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"></script>
+  <style>
+    /* NextZen Design System Integration */
+    :root {
+      --az-purple: #8A4BE1;
+      --az-blue: #3B82F6;
+      --az-dark: #0A0A0F;
+      --az-slate-800: #1E293B;
+      --az-slate-700: #334155;
+      --az-slate-600: #475569;
+      --az-slate-300: #CBD5E1;
+      --az-slate-200: #E2E8F0;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--az-dark);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    rapi-doc {
+      /* Override RapiDoc CSS variables for NextZen branding */
+      --primary-color: var(--az-purple);
+      --nav-delete-color: #ef4444;
+      --nav-post-color: #10b981;
+      --nav-put-color: #f59e0b;
+      --nav-patch-color: #8b5cf6;
+
+      /* Custom gradient header */
+      --header-bg: linear-gradient(135deg, var(--az-purple) 0%, var(--az-blue) 100%);
+
+      /* Enhanced button styling */
+      --btn-fill: linear-gradient(135deg, var(--az-purple) 0%, var(--az-blue) 100%);
+      --btn-outline: var(--az-purple);
+
+      /* Code block improvements */
+      --code-font-size: 16px;
+    }
+
+    /* Custom header with NextZen branding */
+    .nextzen-header {
+      background: linear-gradient(135deg, var(--az-purple) 0%, var(--az-blue) 100%);
+      padding: 24px 32px;
+      color: white;
+      border-bottom: 1px solid var(--az-slate-700);
+    }
+
+    .nextzen-header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 0%, var(--az-slate-200) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nextzen-header p {
+      margin: 8px 0 0 0;
+      font-size: 16px;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+
+    /* Enhanced navigation styling */
+    rapi-doc::part(section-navbar) {
+      background: var(--az-slate-800);
+      border-right: 1px solid var(--az-slate-700);
+    }
+
+    /* Method badges with better contrast */
+    rapi-doc::part(section-tag) {
+      background: var(--az-slate-700);
+      border: 1px solid var(--az-slate-600);
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    /* Response area improvements */
+    rapi-doc::part(section-tag-body) {
+      background: var(--az-slate-800);
+      border-radius: 8px;
+      border: 1px solid var(--az-slate-700);
+    }
+
+    /* Button hover effects */
+    rapi-doc::part(btn-fill):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(138, 75, 225, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    /* Code syntax highlighting adjustments */
+    rapi-doc::part(mono-font) {
+      font-family: 'SF Mono', Monaco, 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+      background: var(--az-slate-700);
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .nextzen-header {
+        padding: 16px 24px;
+      }
+
+      .nextzen-header h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- NextZen Branded Header -->
+  <div class="nextzen-header">
+    <h1>AddressZen OpenAPI Documentation</h1>
+  </div>
+  <rapi-doc
+    spec-url="https://openapi.addresszen.com/openapi.yaml"
+
+    theme="dark"
+    bg-color="#0A0A0F"
+    text-color="#ffffff"
+    header-color="#1E293B"
+    primary-color="#8A4BE1"
+
+    nav-bg-color="#1E293B"
+    nav-text-color="#E2E8F0"
+    nav-hover-bg-color="#334155"
+    nav-hover-text-color="#ffffff"
+    nav-accent-color="#8A4BE1"
+    nav-accent-text-color="#ffffff"
+
+    regular-font="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    mono-font="'SF Mono', Monaco, 'Inconsolata', 'Roboto Mono', monospace"
+    font-size="default"
+
+
+    show-header="false"
+    show-info="true"
+    allow-authentication="false"
+    allow-server-selection="false"
+    allow-api-list-style-selection="false"
+
+    nav-item-spacing="relaxed"
+
+    response-area-height="400px"
+    render-style="focused"
+    schema-style="table"
+    schema-expand-level="2"
+
+    default-schema-tab="schema"
+
+    persist-auth="false"
+
+    fill-request-fields-with-example="false"
+
+
+    sort-tags="false"
+
+    match-type="includes"
+  > </rapi-doc>
+</body>
+</html>
