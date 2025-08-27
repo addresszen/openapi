@@ -15,7 +15,7 @@
     "semantic-release": "semantic-release --no-ci",
     "start": "redocly preview --project-dir dist",
     "replace": "ts-node replace.ts",
-    "build": "tsc && redocly build-docs -o dist/index.html",
+    "build": "tsc",
     "test": "redocly lint dist/openapi.yaml && redocly lint dist/openapi.json"
   },
   "main": "dist/openapi.js",
