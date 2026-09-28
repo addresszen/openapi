@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.0.4 (2026-09-28)
+
+### Patch Changes
+
+- Point JavaScript exports at the built package entry.
+
 ## 4.0.3 (2026-09-28)
 
 ### Patch Changes
