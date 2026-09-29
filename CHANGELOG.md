@@ -1,5 +1,20 @@
 # Changelog
 
+## 4.1.0 (2026-09-29)
+
+### Minor Changes
+
+- Declare `ApiKey` and `ManagementKey` Bearer security schemes on every operation; authentication docs lead with `Authorization: Bearer`
+- Rename the user token to Management Key throughout
+- Document licensee update as `POST /keys/{key}/licensees/{licensee}`, the method the API serves
+- Verify Address documents the `context` parameter for addresses outside the United States
+- Document recommended allowed URL formats
+- US spelling and punctuation fixes in descriptions
+
+### Patch Changes
+
+- Licensee examples use postcode BR8 7RE
+
 ## 4.0.4 (2026-09-28)
 
 ### Patch Changes

@@ -15,11 +15,11 @@ export interface paths {
          * Availability
          * @description Returns public information on an API Key: whether it can be used right now (`available`), the search contexts the key is licensed for (`contexts`) and the context that best matches the caller's IP address (`context`).
          *
-         *     The endpoint accepts API Keys (beginning `ak_`) and sub-licensed keys (beginning `sl_`), and needs no `user_token`.
+         *     The endpoint accepts API Keys (beginning `ak_`) and sub-licensed keys (beginning `sl_`), and needs no Management Key.
          *
          *     A key that exists but cannot be used, because it has no lookups left or has breached a limit, returns `200` with `"available": false`. An unknown or malformed key returns an error.
          *
-         *     Supply a valid `user_token` and the endpoint returns the key's private details instead, as `GET /keys/{key}/details` does. A `user_token` that does not own the key is rejected.
+         *     Supply a valid Management Key and the endpoint returns the key's private details instead, as `GET /keys/{key}/details` does. A Management Key that does not own the key is rejected.
          */
         get: operations["KeyAvailability"];
         put?: never;
@@ -89,7 +89,7 @@ export interface paths {
          * Logs (CSV)
          * @description Returns a CSV of the charged lookups made on a key, one row per request.
          *
-         *     Requires the `user_token` for the account. The maximum interval is 90 days. Without a start or end date the interval is the last 21 days.
+         *     Requires the account Management Key. The maximum interval is 90 days. Without a start or end date the interval is the last 21 days.
          *
          *     The response is `text/csv` and downloads as an attachment. A non-200 response reverts to JSON, with the error code and message in the body.
          *
@@ -142,6 +142,12 @@ export interface paths {
          *     A match returns the standardized address lines, city, state and ZIP+4, scored by `fit` and `confidence`. It also carries the CASS record behind the match: delivery point, DPV flags, carrier route, eLOT, county, congressional district, RDI, time zone and coordinates. No match returns `200` with a `count` of `0`, a `null` `match` and empty address fields.
          *
          *     Only a match draws on your balance. A key without address verification enabled returns `401`. A verification still running after 9.5 seconds aborts with `429`.
+         *
+         *     ## Countries
+         *
+         *     Verify defaults to the United States, where it is CASS certified. Pass `context` with an ISO 3166-1 alpha-3 country code to verify an address elsewhere, e.g. `context=GBR` or `context=FRA`. The address datasets your key is licensed for decide which countries it can verify.
+         *
+         *     Outside the United States there is no CASS record to return, so `match` carries the standardized address from that country's dataset instead. The top-level fields (`address_line_one`, `city`, `state`, `zip_code`, `country_iso_2`) are populated for every country, along with `confidence` and `fit`.
          */
         post: operations["AddressVerify"];
         delete?: never;
@@ -292,7 +298,7 @@ export interface paths {
         };
         /**
          * List
-         * @description Returns a key's licensees, oldest first, up to 100 per request. The list omits cancelled licensees. The key must be enabled for sub-licensing.
+         * @description Returns a key's licensees, oldest first, up to 100 per request. The list omits canceled licensees. The key must be enabled for sub-licensing.
          */
         get: operations["ListLicensees"];
         put?: never;
@@ -316,15 +322,15 @@ export interface paths {
         };
         /**
          * Retrieve
-         * @description Returns a licensee by its `sl_` key. A cancelled or unknown licensee returns `404`.
+         * @description Returns a licensee by its `sl_` key. A canceled or unknown licensee returns `404`.
          */
         get: operations["RetrieveLicensee"];
+        put?: never;
         /**
          * Update
          * @description Updates a licensee's address, postcode, allowed URLs and daily limit. Returns the updated licensee. The name is fixed at creation.
          */
-        put: operations["UpdateLicensee"];
-        post?: never;
+        post: operations["UpdateLicensee"];
         /**
          * Cancel
          * @description Cancels a licensee. Its key stops working and it drops out of the licensee list. Contact us to reverse it.
@@ -565,7 +571,7 @@ export interface components {
             /**
              * @description Determines whether the key can be used by the requesting agent.
              *
-             *     Returns false if one of the following conditions are met:
+             *     Returns false if one of the following conditions is met:
              *       - Key has no lookups remaining
              *       - Daily limit has been reached on the key
              *       - Daily individual limit has been reached
@@ -890,7 +896,16 @@ export interface components {
             daily_limit: components["schemas"]["ApiKeyDailyLimit"];
             monthly_limit: components["schemas"]["ApiKeyMonthlyLimit"];
             individual_limit: components["schemas"]["ApiKeyIndividualLimit"];
-            /** @description A list of allowed URLs. An empty list means that allowed URLs are disabled. */
+            /**
+             * @description A list of allowed URLs. An empty list disables the check.
+             *
+             *     A request is allowed when its `Origin` or `Referer` header matches an entry. Use one of these formats:
+             *
+             *     - `https://www.example.com` allows one site. Scheme and host must match
+             *     - `*.example.com` allows the domain and all its subdomains
+             *
+             *     See [Allowed URLs](https://docs.addresszen.com/docs/guides/allowed-urls).
+             */
             allowed_urls: string[];
             /**
              * @description Number of days to preserve personal data stored in your key usage history. Set to 0 to prevent personal data storage
@@ -908,7 +923,7 @@ export interface components {
              */
             ip_forwarding: boolean;
             /**
-             * @description Whether the key is enrolled in the premier support programme and monitored closely by our devops team. Read-only; managed by our team.
+             * @description Whether the key is enrolled in the premier support program and monitored closely by our devops team. Read-only; managed by our team.
              * @default false
              */
             premier_support: boolean;
@@ -962,7 +977,16 @@ export interface components {
                  */
                 limit?: number | null;
             };
-            /** @description A list of allowed URLs. An empty list means that allowed URLs are disabled. Up to 10 allowed. */
+            /**
+             * @description A list of allowed URLs. An empty list disables the check. Up to 10 allowed.
+             *
+             *     A request is allowed when its `Origin` or `Referer` header matches an entry. Use one of these formats:
+             *
+             *     - `https://www.example.com` allows one site. Scheme and host must match
+             *     - `*.example.com` allows the domain and all its subdomains
+             *
+             *     See [Allowed URLs](https://docs.addresszen.com/docs/guides/allowed-urls).
+             */
             allowed_urls?: string[];
             /**
              * @description Number of days to preserve personal data stored in your key usage history. Set to 0 to prevent personal data storage
@@ -1467,7 +1491,7 @@ export interface components {
             match: components["schemas"]["UsaCassVerifiedAddress"];
             /** @description The number of addresses we matched to the input. We return the closest match by default. */
             count: number;
-            /** @description A score represented as number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 12 Pye Green Road) will have a fit of 1 even though it is missing post town and postcode. Its confidence score will be less than 1 however because it is missing some crucial elements. */
+            /** @description A score represented as number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements. */
             fit: number;
             /** @description A confidence score represented as number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements. */
             confidence: number;
@@ -3340,9 +3364,9 @@ export interface components {
             /**
              * @description A number associated with the whole building. The building number may have a numeric and an alphanumeric component, which are concatenated e.g. 2A, or alternatively will have a simple building number or a complex building number. The building number always relates to the whole building and not a sub-unit within it.
              *     A complex building number may be one of the following:
-             *       - Dual. Two number separated by '/' e.g. 63/64 = 63, 64
+             *       - Dual. Two numbers separated by '/' e.g. 63/64 = 63, 64
              *       - Sequence. An odd or even sequence of numbers with lower and upper bound separated by an underscore '_' e.g. `1_5` = 1,3,5 and `2_6` = 2,4,6
-             *       - Range. A range of consecutive numbers with lower and upper bound separated by a dash '-' e.g. `63-66` = 63, 64, 56, 66
+             *       - Range. A range of consecutive numbers with lower and upper bound separated by a dash '-' e.g. `63-66` = 63, 64, 65, 66
              *     The building number never appears on a line by itself and can prepend Building Group, Primary Thoroughfare or Primary Locality.
              */
             building_number: string;
@@ -8332,7 +8356,7 @@ export interface components {
             street_post_directional_abbreviation: string;
             /**
              * Building or Firm Name
-             * @description The name of a company, building, apartment complex, shopping center, or other distinguishing secondary address information.
+             * @description The name of a company, building, apartment complex, shopping center or other distinguishing secondary address information.
              */
             building_or_firm_name: string;
             /**
@@ -8433,7 +8457,7 @@ export interface components {
             city_state_name_facility_code: "B" | "C" | "N" | "P" | "S" | "U" | "Y" | "";
             /**
              * ZIP Classification Code
-             * @description Describes the type of ZIP area a 5-digit ZIP Code serves, e.g. a single educational institution, post office boxes only, or a single address with unusually high mail volume.
+             * @description Describes the type of ZIP area a 5-digit ZIP Code serves, e.g. a single educational institution, post office boxes only or a single address with unusually high mail volume.
              *
              *     - M = Military ZIP Code
              *     - P = ZIP Code having only Post Office Boxes
@@ -8744,10 +8768,17 @@ export interface components {
             address?: string;
             /**
              * @description Licensee's postcode
-             * @example ID1 1QD
+             * @example BR8 7RE
              */
             postcode?: string;
-            /** @description A list of allowed URLs. An empty list means that whitelisting is disabled */
+            /**
+             * @description A list of allowed URLs. An empty list disables the check.
+             *
+             *     A request is allowed when its `Origin` or `Referer` header matches an entry. Use one of these formats:
+             *
+             *     - `https://www.example.com` allows one site. Scheme and host must match
+             *     - `*.example.com` allows the domain and all its subdomains
+             */
             whitelist?: string[];
             daily?: {
                 /**
@@ -8768,7 +8799,7 @@ export interface components {
             /**
              * @description Uniquely identifies a licensee for a key.
              *
-             *     Required to perform paid lookups for a specific licensee. Typically begins `sk_`.
+             *     Required to perform paid lookups for a specific licensee. Typically begins `sl_`.
              * @example sl_ijoiqsxeQgXW2gkiE0X94
              */
             key: string;
@@ -8780,7 +8811,7 @@ export interface components {
             daily: {
                 /**
                  * Format: int32
-                 * @description The number lookups performed by the licensee on the day represented b `licesees.daily.updatedAt`
+                 * @description The number of lookups performed by the licensee on the day represented by `licensees.daily.updatedAt`
                  * @example 232
                  */
                 count: number;
@@ -9097,13 +9128,13 @@ export interface components {
          */
         ApiKeyPathParam: string;
         /**
-         * @description **Private User Token**
+         * @description **Management Key**
          *
-         *     A secret key used for sensitive operations on your account and API Keys.
+         *     A secret key used to manage your account and API Keys. It was previously called the user token.
          *
-         *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+         *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
          *
-         *     Typically begins `uk_...`
+         *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
          * @example uk_B59ScW1p1HHouf1VqclEPZUx
          */
         UserTokenParam: string;
@@ -9176,8 +9207,8 @@ export interface components {
         /**
          * @description **Bias by Geolocation**
          *
-         *     Bias search to a geospatial circle determined by an origin and radius in metres. Max radius is `50000`.
-         *     Uses the format bias_lonlat=[longitude],[latitude],[radius in metres].
+         *     Bias search to a geospatial circle determined by an origin and radius in meters. Max radius is `50000`.
+         *     Uses the format bias_lonlat=[longitude],[latitude],[radius in meters].
          *     Only one geospatial bias may be provided.
          * @example -2.095,57.15,100
          */
@@ -9395,13 +9426,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -9453,13 +9484,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -9515,13 +9546,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -9596,13 +9627,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -9803,8 +9834,8 @@ export interface operations {
                 /**
                  * @description **Bias by Geolocation**
                  *
-                 *     Bias search to a geospatial circle determined by an origin and radius in metres. Max radius is `50000`.
-                 *     Uses the format bias_lonlat=[longitude],[latitude],[radius in metres].
+                 *     Bias search to a geospatial circle determined by an origin and radius in meters. Max radius is `50000`.
+                 *     Uses the format bias_lonlat=[longitude],[latitude],[radius in meters].
                  *     Only one geospatial bias may be provided.
                  * @example -2.095,57.15,100
                  */
@@ -10075,8 +10106,8 @@ export interface operations {
                 /**
                  * @description **Bias by Geolocation**
                  *
-                 *     Bias search to a geospatial circle determined by an origin and radius in metres. Max radius is `50000`.
-                 *     Uses the format bias_lonlat=[longitude],[latitude],[radius in metres].
+                 *     Bias search to a geospatial circle determined by an origin and radius in meters. Max radius is `50000`.
+                 *     Uses the format bias_lonlat=[longitude],[latitude],[radius in meters].
                  *     Only one geospatial bias may be provided.
                  * @example -2.095,57.15,100
                  */
@@ -10190,13 +10221,13 @@ export interface operations {
                 /** @description ID of the licensee after which to list results */
                 starting_after?: number;
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10250,13 +10281,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10303,13 +10334,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10359,13 +10390,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10419,13 +10450,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10490,13 +10521,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10546,13 +10577,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10595,13 +10626,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10701,13 +10732,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10770,13 +10801,13 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description **Private User Token**
+                 * @description **Management Key**
                  *
-                 *     A secret key used for sensitive operations on your account and API Keys.
+                 *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your user token can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`
+                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
