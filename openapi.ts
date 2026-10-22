@@ -44,7 +44,7 @@ export interface paths {
         get: operations["KeyDetails"];
         /**
          * Update Details
-         * @description Updates a key's settings and returns its private details. Only the fields you send change. A key on an unlimited plan ignores changes to `datasets`, `daily_limit` and `monthly_limit`.
+         * @description Updates a key's settings and returns its private details. Only the fields you send change. A key on an unlimited plan ignores changes to `datasets`, `daily_limit` and `monthly_limit`. Datasets set by your plan cannot be changed here: sending one with a different value returns a 400.
          */
         put: operations["UpdateKeyDetails"];
         post?: never;
@@ -139,15 +139,19 @@ export interface paths {
          *
          *     Submit the whole address in `query`, or the first address line in `query` with either `zip_code`, or `city` and `state`. A freeform `query` is parsed into those components before the search runs.
          *
-         *     A match returns the standardized address lines, city, state and ZIP+4, scored by `fit` and `confidence`. It also carries the CASS record behind the match: delivery point, DPV flags, carrier route, eLOT, county, congressional district, RDI, time zone and coordinates. No match returns `200` with a `count` of `0`, a `null` `match` and empty address fields.
+         *     A match returns the standardized address lines, city, state and ZIP+4, scored by `fit` and `confidence`. It also carries the CASS record behind the match: delivery point, DPV flags, carrier route, eLOT, county, congressional district, RDI, time zone and coordinates. CASS corrects what it can, so an address with the wrong city or state for its ZIP code still verifies, with the corrected values.
          *
-         *     Only a match draws on your balance. A key without address verification enabled returns `401`. A verification still running after 9.5 seconds aborts with `429`.
+         *     An address that cannot be verified returns `200` with a `count` of `0`, a `null` `match` and empty address fields. `match_information` says why, e.g. `Address not found` or `House number not valid for this street`. It is for people to read and its wording may change, so test `match` for `null` rather than parsing it.
+         *
+         *     In the United States every verification the CASS engine answers draws on your balance, matched or not. A query that cannot be parsed into an address does not. Elsewhere only a match draws on your balance. A key without address verification enabled returns `401`. A verification still running after 9.5 seconds aborts with `429`.
          *
          *     ## Countries
          *
          *     Verify defaults to the United States, where it is CASS certified. Pass `context` with an ISO 3166-1 alpha-3 country code to verify an address elsewhere, e.g. `context=GBR` or `context=FRA`. The address datasets your key is licensed for decide which countries it can verify.
          *
-         *     Outside the United States there is no CASS record to return, so `match` carries the standardized address from that country's dataset instead. The top-level fields (`address_line_one`, `city`, `state`, `zip_code`, `country_iso_2`) are populated for every country, along with `confidence` and `fit`.
+         *     Outside the United States there is no CASS record, so `match` is the address in the same format Retrieve Address returns: USPS-style field names, empty strings where the country has no equivalent, and the raw dataset record in `native`. Check `dataset` to tell the two apart: it is present on every non-US match and absent from a CASS match.
+         *
+         *     The top-level fields (`address_line_one`, `address_line_two`, `city`, `state`, `zip_code`, `country_iso_2`) are populated for every country, along with `confidence` and `fit`.
          */
         post: operations["AddressVerify"];
         delete?: never;
@@ -576,7 +580,7 @@ export interface components {
              *       - Daily limit has been reached on the key
              *       - Daily individual limit has been reached
              *       - Key is not being used via an authorised URL
-             *       - (Sublicensed key only) Key has a valid licensee attached
+             *       - (Sublicensed key only) Key has no valid licensee attached
              *       - (Sublicensed key only) Key is not being used via an authorised URL specified by licensee
              * @example true
              */
@@ -970,7 +974,7 @@ export interface components {
             individual_limit?: {
                 /**
                  * Format: int32
-                 * @description `number` or `null` Limit set on the number of lookups that can be
+                 * @description `number` or `null`. Limit set on the number of lookups that can be
                  *     performed from a single IP address. `null` means the limit is currently
                  *     disabled.
                  * @example 30
@@ -1017,7 +1021,7 @@ export interface components {
             ip_forwarding: boolean;
             /**
              * API Key Dataset Availability
-             * @description Indicates which datasets are available and added by default to the address responses
+             * @description Datasets you can switch on or off for this key. Datasets set by your plan (`paf`, `mr`, `nyb`, `ecad`, `ecaf`) cannot be changed here: sending one with a different value returns a 400.
              */
             datasets?: {
                 /**
@@ -1289,7 +1293,7 @@ export interface components {
             area_code: string;
             /** @description Data required to perform a Carrier Route sort */
             carrier_route: string;
-            /** @description Character following the 5 or 9 digit ZIP Code. Part of the 11-digit barcode */
+            /** @description Character following the 5-digit or 9-digit ZIP Code. Part of the 11-digit barcode */
             check_digit: string;
             /** @description City name */
             city: string;
@@ -1297,7 +1301,7 @@ export interface components {
             city_abbreviation: string;
             /** @description Identifies the Congressional District. Empty string if not present */
             congressional_district: string;
-            /** @description ISO3166 country code. Empty string if not present */
+            /** @description ISO 3166 country code. Empty string if not present */
             country_code: string;
             /** @description Name of the county */
             county: string;
@@ -1427,7 +1431,7 @@ export interface components {
             longitude: string;
             /** @description Information if a Private Mail Box (PMB) is found in an address. Empty string if not present */
             parsed_pmb_designator: string;
-            /** @description Information if a Private Mail Box (PMB) is found in an address. Empty string if not present */
+            /** @description Private Mail Box (PMB) number, if one is found in an address. Empty string if not present */
             parsed_pmb_number: string;
             /** @description Notation following the street name indicating street direction. Empty string if not present */
             parsed_post_directional: string;
@@ -1477,174 +1481,17 @@ export interface components {
             /** @description 5-digit ZIP Code and the four additional digits */
             zip_code: string;
         };
-        /** Address Match */
-        UsaVerifyMatch: {
-            /** @description Submitted query */
-            query: string;
-            /** @description Submitted city */
-            query_city: string;
-            /** @description Submitted state */
-            query_state: string;
-            /** @description Submitted zip_code */
-            query_zip_code: string;
-            /** @description Nearest matching address */
-            match: components["schemas"]["UsaCassVerifiedAddress"];
-            /** @description The number of addresses we matched to the input. We return the closest match by default. */
-            count: number;
-            /** @description A score represented as number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements. */
-            fit: number;
-            /** @description A confidence score represented as number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements. */
-            confidence: number;
-            /**
-             * @description Additional information about the match.
-             *
-             *     This information is for human consumption and may not be present in all responses.
-             * @example Single Response - The delivery address was found in the National Database and no further information was required.
-             */
-            match_information: string;
-            /**
-             * @description Primary delivery address
-             * @example 123 Main St
-             */
-            address_line_one: string;
-            /**
-             * @description Secondary address information
-             * @example
-             */
-            address_line_two: string;
-            /**
-             * @description City name
-             * @example Springfield
-             */
-            city: string;
-            /**
-             * @description State name
-             * @example CO
-             */
-            state: string;
-            /**
-             * @description Zip code
-             * @example 81073-1119
-             */
-            zip_code: string;
-            /**
-             * @description 2 letter ISO country code
-             * @example US
-             */
-            country_iso_2: string;
-        };
-        /** No Address Match */
-        UsaVerifyNoMatch: {
-            /** @description Originally submitted query */
-            query: string;
-            /** @description Originally submitted city */
-            query_city: string;
-            /** @description Originally submitted state */
-            query_state: string;
-            /** @description Originally submitted zip_code */
-            query_zip_code: string;
-            /**
-             * @description Nearest matching address
-             * @enum {object|null}
-             */
-            match: never | null;
-            /** @enum {number} */
-            count: 0;
-            /**
-             * Format: float
-             * @enum {number}
-             */
-            fit: 0;
-            /**
-             * Format: float
-             * @enum {number}
-             */
-            confidence: 0;
-            /**
-             * @description Empty if no match
-             * @enum {string}
-             */
-            address_line_one: "";
-            /**
-             * @description Empty if no match
-             * @enum {string}
-             */
-            address_line_two: "";
-            /**
-             * @description Empty if no match
-             * @enum {string}
-             */
-            city: "";
-            /**
-             * @description Empty if no match
-             * @enum {string}
-             */
-            state: "";
-            /**
-             * @description Empty if no match
-             * @enum {string}
-             */
-            zip_code: "";
-            /**
-             * @description Empty if no match
-             * @enum {string}
-             */
-            country_iso_2: "";
-        };
-        /** Address Verify Response */
-        VerifyResponse: {
-            /**
-             * Format: int32
-             * @enum {integer}
-             */
-            code: 2000;
-            /** @enum {string} */
-            message: "Success";
-            result: components["schemas"]["UsaVerifyMatch"] | components["schemas"]["UsaVerifyNoMatch"];
-        };
+        /**
+         * Address Identifier
+         * @description Globally unique internally generated identifier for an address
+         */
+        ID: string;
         /**
          * Dataset
          * @description Indicates the provenance of an address.
          * @enum {string}
          */
         Dataset: "paf" | "pafw" | "pafa" | "mr" | "nyb" | "usps" | "ecaf" | "ecad" | "ab" | "abp" | "herewe" | "heret" | "heresa" | "hereo" | "herena" | "heremeas" | "heremea" | "herem" | "herei" | "herehk" | "hereee" | "hereap" | "gnaf" | "kadaster" | "kartverket" | "sdfi" | "cannar" | "fodbosa" | "mois" | "upujp" | "bev" | "ban" | "swt";
-        /**
-         * Address Identifier
-         * @description Global unique internally generated identifier for an address
-         */
-        ID: string;
-        /**
-         * Address Suggestion
-         * @description Represents an address suggestion for any address in the world
-         * @example {
-         *       "id": "usps_V210079628|10||3797",
-         *       "suggestion": "10 Downing St, Montpelier, VT, 05602",
-         *       "urls": {}
-         *     }
-         */
-        AddressSuggestion: {
-            id: components["schemas"]["ID"];
-            /** @description Address Suggestion to be displayed to the user */
-            suggestion: string;
-            /**
-             * URLs
-             * @description Always an empty object (`{}`). Retrieve the full address with `id`
-             */
-            urls: Record<string, never>;
-        };
-        /** Address Autocomplete Response */
-        AutocompleteResponse: {
-            result: {
-                hits: components["schemas"]["AddressSuggestion"][];
-            };
-            /**
-             * Format: int32
-             * @enum {integer}
-             */
-            code: 2000;
-            /** @enum {string} */
-            message: "Success";
-        };
         /**
          * ISO Country Code (3)
          * @description 3 letter country code (ISO 3166-1)
@@ -8271,12 +8118,12 @@ export interface components {
             primary_number: string;
             /**
              * Secondary Number
-             * @description Number of the sub unit, apartment, suite etc.
+             * @description Number of the subunit, apartment, suite etc.
              */
             secondary_number: string;
             /**
              * Plus 4 Code
-             * @description 4 digit ZIP add-on code. USPS addresses only.
+             * @description 4-digit ZIP add-on code. USPS addresses only.
              */
             plus_4_code: string;
             /**
@@ -8296,7 +8143,7 @@ export interface components {
             last_line: string;
             /**
              * ZIP Code
-             * @description Postal code identifying the delivery area. For US addresses this is the 5 digit ZIP Code.
+             * @description Postal code identifying the delivery area. For US addresses this is the 5-digit ZIP Code.
              */
             zip_code: string;
             /**
@@ -8325,7 +8172,7 @@ export interface components {
             record_type_code: "G" | "H" | "F" | "S" | "P" | "R" | "M" | "";
             /**
              * Carrier Route ID
-             * @description A 4 character ID identifying the USPS postal route for the address. The first character indicates the route type:
+             * @description A 4-character ID identifying the USPS postal route for the address. The first character indicates the route type:
              *
              *     - "B" indicates PO Box
              *     - "H" indicates highway
@@ -8399,7 +8246,7 @@ export interface components {
             government_building_indicator: "" | "A" | "B" | "C" | "D" | "E" | "F" | "G";
             /**
              * State Abbreviation
-             * @description Abbreviated name of the state, province or region. For US addresses this is the 2 character state, territory or armed forces designation ("AA", "AE" or "AP" for APO/FPO/DPO).
+             * @description Abbreviated name of the state, province or region. For US addresses this is the 2-character state, territory or armed forces designation ("AA", "AE" or "AP" for APO/FPO/DPO).
              */
             state_abbreviation: string;
             /**
@@ -8495,6 +8342,170 @@ export interface components {
              */
             county_number: string | number;
             native?: components["schemas"]["NativeRecord"];
+        };
+        /** Address Match */
+        UsaVerifyMatch: {
+            /** @description Submitted query */
+            query: string;
+            /** @description Submitted city */
+            query_city: string;
+            /** @description Submitted state */
+            query_state: string;
+            /** @description Submitted zip_code */
+            query_zip_code: string;
+            /** @description Nearest matching address. A CASS verified address in the United States. Elsewhere, the address in the same format Retrieve Address returns, with the raw dataset record in `native` */
+            match: components["schemas"]["UsaCassVerifiedAddress"] | components["schemas"]["Address"];
+            /** @description The number of addresses we matched to the input. We return the closest match by default. */
+            count: number;
+            /** @description A score represented as number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements. */
+            fit: number;
+            /** @description A confidence score represented as number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements. */
+            confidence: number;
+            /**
+             * @description Additional information about the match.
+             *
+             *     This information is for human consumption and may not be present in all responses.
+             * @example Single Response - The delivery address was found in the National Database and no further information was required.
+             */
+            match_information: string;
+            /**
+             * @description Primary delivery address
+             * @example 123 Main St
+             */
+            address_line_one: string;
+            /**
+             * @description Secondary address information
+             * @example
+             */
+            address_line_two: string;
+            /**
+             * @description City name
+             * @example Springfield
+             */
+            city: string;
+            /**
+             * @description State name
+             * @example CO
+             */
+            state: string;
+            /**
+             * @description ZIP code
+             * @example 81073-1119
+             */
+            zip_code: string;
+            /**
+             * @description 2-letter ISO country code
+             * @example US
+             */
+            country_iso_2: string;
+        };
+        /** No Address Match */
+        UsaVerifyNoMatch: {
+            /** @description Originally submitted query */
+            query: string;
+            /** @description Originally submitted city */
+            query_city: string;
+            /** @description Originally submitted state */
+            query_state: string;
+            /** @description Originally submitted zip_code */
+            query_zip_code: string;
+            /**
+             * @description Nearest matching address
+             * @enum {object|null}
+             */
+            match: never | null;
+            /** @enum {number} */
+            count: 0;
+            /**
+             * Format: float
+             * @enum {number}
+             */
+            fit: 0;
+            /**
+             * Format: float
+             * @enum {number}
+             */
+            confidence: 0;
+            /**
+             * @description Why the address could not be verified, for people to read. For example `Address not found`, `House number not valid for this street`, `Invalid city, state or ZIP code` or `Address could not be parsed`.
+             *
+             *     The wording may change, so do not parse it. Test `match` for `null` instead.
+             * @example Address not found
+             */
+            match_information: string;
+            /**
+             * @description Empty if no match
+             * @enum {string}
+             */
+            address_line_one: "";
+            /**
+             * @description Empty if no match
+             * @enum {string}
+             */
+            address_line_two: "";
+            /**
+             * @description Empty if no match
+             * @enum {string}
+             */
+            city: "";
+            /**
+             * @description Empty if no match
+             * @enum {string}
+             */
+            state: "";
+            /**
+             * @description Empty if no match
+             * @enum {string}
+             */
+            zip_code: "";
+            /**
+             * @description Empty if no match
+             * @enum {string}
+             */
+            country_iso_2: "";
+        };
+        /** Address Verify Response */
+        VerifyResponse: {
+            /**
+             * Format: int32
+             * @enum {integer}
+             */
+            code: 2000;
+            /** @enum {string} */
+            message: "Success";
+            result: components["schemas"]["UsaVerifyMatch"] | components["schemas"]["UsaVerifyNoMatch"];
+        };
+        /**
+         * Address Suggestion
+         * @description Represents an address suggestion for any address in the world
+         * @example {
+         *       "id": "usps_V210079628|10||3797",
+         *       "suggestion": "10 Downing St, Montpelier, VT, 05602",
+         *       "urls": {}
+         *     }
+         */
+        AddressSuggestion: {
+            id: components["schemas"]["ID"];
+            /** @description Address Suggestion to be displayed to the user */
+            suggestion: string;
+            /**
+             * URLs
+             * @description Always an empty object (`{}`). Retrieve the full address with `id`
+             */
+            urls: Record<string, never>;
+        };
+        /** Address Autocomplete Response */
+        AutocompleteResponse: {
+            result: {
+                hits: components["schemas"]["AddressSuggestion"][];
+            };
+            /**
+             * Format: int32
+             * @enum {integer}
+             */
+            code: 2000;
+            /** @enum {string} */
+            message: "Success";
         };
         /** Address Retrieve Response */
         UsaResolveAddressResponse: {
@@ -8722,7 +8733,7 @@ export interface components {
         Place: {
             /**
              * Place Identifier
-             * @description Global unique internally generated identifier for a place
+             * @description Globally unique internally generated identifier for a place
              */
             id: string;
             /**
@@ -8750,6 +8761,85 @@ export interface components {
             /** @enum {string} */
             message: "Success";
             result: components["schemas"]["Place"];
+        };
+        /** Licensee */
+        Licensee: {
+            /**
+             * @description An immutable ID provided for every licensee. Primarily used for paginated list requests.
+             * @example 56a11209ebe230380bf104c3
+             */
+            id: string;
+            /**
+             * @description Uniquely identifies a licensee for a key.
+             *
+             *     Required to perform paid lookups for a specific licensee. Typically begins `sl_`.
+             * @example sl_ijoiqsxeQgXW2gkiE0X94
+             */
+            key: string;
+            /**
+             * @description Timestamp for when the licensee was created
+             * @example 2016-01-21T17:14:49.971Z
+             */
+            createdAt: string;
+            /**
+             * @description Licensee individual or organisation name
+             * @example Qwerty Widgets Limited
+             */
+            name: string;
+            /**
+             * @description Licensee's first, second and third line address as well as post town concatenated by commas
+             * @example 12 High Street, Manchester
+             */
+            address: string;
+            /**
+             * @description Licensee's postcode
+             * @example BR8 7RE
+             */
+            postcode: string;
+            /**
+             * @description A list of allowed URLs. An empty list disables the check.
+             *
+             *     A request is allowed when its `Origin` or `Referer` header matches an entry. Use one of these formats:
+             *
+             *     - `https://www.example.com` allows one site. Scheme and host must match
+             *     - `*.example.com` allows the domain and all its subdomains
+             */
+            whitelist: string[];
+            daily: {
+                /**
+                 * Format: int32
+                 * @description The maximum number of lookups this licensee can perform in a day. `null` indicates the limit is not active
+                 * @example 10000
+                 */
+                limit: number | null;
+                /**
+                 * Format: int32
+                 * @description The number of lookups performed by the licensee on the day represented by `licensees.daily.updatedAt`
+                 * @example 232
+                 */
+                count: number;
+                /**
+                 * @description The timestamp when the limit was last used.
+                 * @example 2016-08-05T16:43:28.865Z
+                 */
+                updatedAt: string;
+            };
+        };
+        /** Licensee List Response */
+        LicenseesResponse: {
+            /** @description List of licensees */
+            result: {
+                licensees: components["schemas"]["Licensee"][];
+                /** @description Returns true if there are more licensees listed after the maximum number of results as implied by `limit` */
+                hasMore: boolean;
+            };
+            /** @enum {string} */
+            message: "Success";
+            /**
+             * Format: int32
+             * @enum {integer}
+             */
+            code: 2000;
         };
         /**
          * Licensee
@@ -8789,55 +8879,6 @@ export interface components {
                 limit?: number | null;
             };
         };
-        /** Licensee */
-        Licensee: components["schemas"]["LicenseeEditable"] & {
-            /**
-             * @description An immutable ID provided for every licensee. Primarily used for paginated list requests.
-             * @example 56a11209ebe230380bf104c3
-             */
-            id: string;
-            /**
-             * @description Uniquely identifies a licensee for a key.
-             *
-             *     Required to perform paid lookups for a specific licensee. Typically begins `sl_`.
-             * @example sl_ijoiqsxeQgXW2gkiE0X94
-             */
-            key: string;
-            /**
-             * @description Timestamp for when the licensee was created
-             * @example 2016-01-21T17:14:49.971Z
-             */
-            createdAt: string;
-            daily: {
-                /**
-                 * Format: int32
-                 * @description The number of lookups performed by the licensee on the day represented by `licensees.daily.updatedAt`
-                 * @example 232
-                 */
-                count: number;
-                /**
-                 * @description The timestamp when the limit was last used.
-                 * @example 2016-08-05T16:43:28.865Z
-                 */
-                updatedAt: string;
-            };
-        };
-        /** Licensee List Response */
-        LicenseesResponse: {
-            /** @description List of licensees */
-            result: {
-                licensees?: components["schemas"]["Licensee"][];
-                /** @description Returns true if there are more licensees listed after the maximum number of results as implied by `limit` */
-                hasMore?: boolean;
-            };
-            /** @enum {string} */
-            message: "Success";
-            /**
-             * Format: int32
-             * @enum {integer}
-             */
-            code: 2000;
-        };
         /** Licensee Response */
         LicenseeResponse: {
             result: components["schemas"]["Licensee"];
@@ -8852,12 +8893,12 @@ export interface components {
         /** Config Object */
         Config: {
             /**
-             * @description Timestamp for when the config was created
+             * @description Timestamp for when the config was last updated
              * @example 2016-01-21T17:14:49.971Z
              */
             updatedAt: string;
             /**
-             * @description Timestamp for when the config was updated
+             * @description Timestamp for when the config was created
              * @example 2016-01-21T17:14:49.971Z
              */
             createdAt: string;
@@ -9123,7 +9164,7 @@ export interface components {
         /**
          * @description **API Key**
          *
-         *     The API Key to retrieve. Begins `ak_`.
+         *     The API Key. Begins `ak_`.
          * @example ak_test
          */
         ApiKeyPathParam: string;
@@ -9134,7 +9175,7 @@ export interface components {
          *
          *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
          *
-         *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+         *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
          * @example uk_B59ScW1p1HHouf1VqclEPZUx
          */
         UserTokenParam: string;
@@ -9384,7 +9425,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -9432,7 +9473,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -9442,7 +9483,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -9490,7 +9531,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -9500,7 +9541,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -9552,7 +9593,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -9594,7 +9635,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -9633,7 +9674,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -9664,7 +9705,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -9759,7 +9800,7 @@ export interface operations {
                      */
                     city?: string;
                     /**
-                     * @description State of an address. For the US, use the 2 letter state abbreviation.
+                     * @description State of an address. For the US, use the 2-letter state abbreviation.
                      * @example CO
                      */
                     state?: string;
@@ -10227,7 +10268,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10248,7 +10289,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10287,7 +10328,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10297,7 +10338,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10340,7 +10381,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10350,7 +10391,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10396,7 +10437,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10406,7 +10447,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10456,7 +10497,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10466,7 +10507,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10527,7 +10568,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10537,7 +10578,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10583,7 +10624,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10593,7 +10634,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10632,7 +10673,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10642,7 +10683,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10683,7 +10724,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10738,7 +10779,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10748,7 +10789,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -10807,7 +10848,7 @@ export interface operations {
                  *
                  *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
                  *
-                 *     Typically begins `uk_...`. Prefer the `Authorization: Bearer uk_...` header.
+                 *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
                  */
                 user_token?: components["parameters"]["UserTokenParam"];
@@ -10817,7 +10858,7 @@ export interface operations {
                 /**
                  * @description **API Key**
                  *
-                 *     The API Key to retrieve. Begins `ak_`.
+                 *     The API Key. Begins `ak_`.
                  * @example ak_test
                  */
                 key: components["parameters"]["ApiKeyPathParam"];
@@ -11075,11 +11116,11 @@ export interface operations {
                         /** @example Success */
                         message: string;
                         result: {
-                            /** @description User-level token used to manage account resources via the api. */
+                            /** @description User-level token used to manage account resources via the API. */
                             user_token: string;
                             /** @description Initial test API key for the account. */
                             test_api_key: string;
-                            /** @description Internal api user id. */
+                            /** @description Internal API user id. */
                             user_id: string;
                         };
                     };

@@ -1,5 +1,19 @@
 # Changelog
 
+## 4.2.0 (2026-10-22)
+
+### Minor Changes
+
+- Verify Address: outside the United States, `match` is an `Address`, the same format Retrieve Address returns, with the raw dataset record in `native`. In the United States `match` is still the CASS verified address. `UsaVerifyMatch.match` is `UsaCassVerifiedAddress | Address`: `dataset` is present on every non-US match and absent from a CASS match
+- Non-US matches no longer carry the CASS-only fields (e.g. `dpv`, `carrier_route`, `rdi`, `latitude`, `longitude`, the `parsed_*` components). The top-level `address_line_one`, `address_line_two`, `city`, `state`, `zip_code` and `country_iso_2` are unchanged
+- Verify Address: an address that cannot be verified returns `match: null`, `count: 0` and empty address fields, with the reason in `match_information`, now required on `UsaVerifyNoMatch`
+- Verify Address documents billing: in the United States every verification the CASS engine answers draws on the balance, matched or not; a query that cannot be parsed does not
+- Mark the licensee fields the API always returns as required, including `daily.limit`, `daily.count` and `daily.updatedAt`
+- Update Key Details documents the `400` for changing a dataset set by the plan
+- JavaScript samples use `@addresszen/sdk` and Python samples use `addresszen`; update key samples send `daily_limit` as an object
+- Management Key docs prefer the `Authorization: Bearer` header
+- Wording and hyphenation fixes in descriptions
+
 ## 4.1.1 (2026-10-02)
 
 ### Patch Changes
