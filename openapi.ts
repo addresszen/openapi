@@ -111,7 +111,7 @@ export interface paths {
          *
          *     ## Data redaction
          *
-         *     We redact personally identifiable data (PII) in your usage log weekly, covering the IP, source IP, search term and URL columns.
+         *     We redact personally identifiable information (PII) in your usage log weekly, covering the IP, source IP, search term and URL columns.
          *
          *     The default retention is 28 days. Change the period from your dashboard. Set it to `0` days to stop collecting PII altogether.
          */
@@ -179,7 +179,7 @@ export interface paths {
          *
          *     ## Coverage
          *
-         *     Each search runs in one country, selected with `context`. A missing or unrecognized `context` falls back to your account default. Results come from the datasets enabled on your key: USPS Zip+4 for the US and its territories, and the country datasets you license elsewhere. Where a key has more than one dataset for a country, `dataset` narrows the search.
+         *     Each search runs in one country, selected with `context`. A missing or unrecognized `context` falls back to your account default. Results come from the datasets enabled on your key: USPS ZIP+4 for the US and its territories, and the country datasets you license elsewhere. Where a key has more than one dataset for a country, `dataset` narrows the search.
          *
          *     ## Filters
          *
@@ -189,7 +189,7 @@ export interface paths {
          *
          *     ## Address bias
          *
-         *     Bias terms carry the `bias_` prefix and promote addresses rather than restricting the set, so unmatched addresses still appear, lower down. For example, `bias_state_code=NY,NJ` favors addresses in New York and New Jersey, `bias_lonlat` favors addresses near a point. Invalid bias terms have no effect. Multiple bias terms are allowed unless stated otherwise, with a combined maximum of 5.
+         *     Bias terms carry the `bias_` prefix and promote addresses rather than restricting the set, so unmatched addresses still appear, lower down. For example, `bias_state_code=NY,NJ` favors addresses in New York and New Jersey, and `bias_lonlat` favors addresses near a point. Invalid bias terms have no effect. Multiple bias terms are allowed unless stated otherwise, with a combined maximum of 5.
          *
          *     ## Suggestion format
          *
@@ -1356,7 +1356,7 @@ export interface components {
             /**
              * @description Delivery Point Validation (DPV) NoStat code.
              *
-             *     Indicates whether the address is a vacant property, it receives mail as a part of a drop, or it does not have an established delivery yet.
+             *     Indicates whether the address is a vacant property, it receives mail as a part of a drop or it does not have an established delivery yet.
              *
              *     Possible values:
              *     - 'Y'	Confirmed
@@ -2419,8 +2419,11 @@ export interface components {
             dpa_entry_date?: string | null;
             /**
              * Classification Code
-             * @description Current AddressBase classification code (e.g. `RD` residential,
-             *     `CR` commercial retail). Top-level categories: `R` Residential,
+             * @description Current AddressBase classification code, passed through verbatim at
+             *     whatever level the custodian recorded. Usually tertiary (e.g. `RD03`
+             *     semi-detached, `RD04` terraced, `RD06` self-contained flat, `CR01`
+             *     retail), but can be quaternary (`LP03PA`), secondary (`RD`) or primary
+             *     (`C`). Match on prefix rather than equality. Top-level categories: `R` Residential,
              *     `C` Commercial, `L` Land, `M` Military, `O` Other, `P` Parent shell,
              *     `U` Unclassified, `X` Dual use, `Z` Object of interest. NULL when no
              *     current classification row exists for the UPRN.
@@ -8295,7 +8298,7 @@ export interface components {
              *
              *     - B = Branch
              *     - C = Community post office (CPO)
-             *     - N = Non-postal community name, former USPS facility, or place name
+             *     - N = Non-postal community name, former USPS facility or place name
              *     - P = Post Office
              *     - S = Station
              *     - U = Urbanization
@@ -8357,9 +8360,9 @@ export interface components {
             match: components["schemas"]["UsaCassVerifiedAddress"] | components["schemas"]["Address"];
             /** @description The number of addresses we matched to the input. We return the closest match by default. */
             count: number;
-            /** @description A score represented as number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements. */
+            /** @description A score represented as a number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements. */
             fit: number;
-            /** @description A confidence score represented as number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements. */
+            /** @description A confidence score represented as a number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements. */
             confidence: number;
             /**
              * @description Additional information about the match.
@@ -8414,7 +8417,7 @@ export interface components {
              * @enum {object|null}
              */
             match: never | null;
-            /** @enum {number} */
+            /** @enum {integer} */
             count: 0;
             /**
              * Format: float
@@ -9173,7 +9176,7 @@ export interface components {
          *
          *     A secret key used to manage your account and API Keys. It was previously called the user token.
          *
-         *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+         *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
          *
          *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
          * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -9221,12 +9224,24 @@ export interface components {
          */
         ApiKeyParam: string;
         /**
+         * @description **Remove Firm**
+         *
+         *     Removes firm names from the address lines (`line_1`, `line_2`, ...). Outside the USA this covers organization and department names. Remaining lines move up. Useful when delivering to people rather than businesses.
+         *
+         *     Set `remove_firm=true` to enable.
+         *
+         *     Firm fields and the `native` record are unchanged. If removing the firm would leave no address lines, it is kept and the lines are returned unchanged. Building names are not removed.
+         */
+        RemoveFirmParam: "true";
+        /**
          * @description **Filter by Dataset**
          *
          *     Comma-separated list of datasets to search within.
          *
          *     Filters results to only include addresses from the specified datasets. Useful for keys with multiple overlapping datasets enabled (e.g. `paf` and `abp`).
-         * @example usps
+         * @example [
+         *       "usps"
+         *     ]
          */
         DatasetParam: components["schemas"]["Dataset"][];
         /**
@@ -9471,7 +9486,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -9529,7 +9544,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -9591,7 +9606,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -9672,7 +9687,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -9764,6 +9779,16 @@ export interface operations {
                  */
                 tags?: components["parameters"]["TagsParam"];
                 /**
+                 * @description **Remove Firm**
+                 *
+                 *     Removes firm names from the address lines (`line_1`, `line_2`, ...). Outside the USA this covers organization and department names. Remaining lines move up. Useful when delivering to people rather than businesses.
+                 *
+                 *     Set `remove_firm=true` to enable.
+                 *
+                 *     Firm fields and the `native` record are unchanged. If removing the firm would leave no address lines, it is kept and the lines are returned unchanged. Building names are not removed.
+                 */
+                remove_firm?: components["parameters"]["RemoveFirmParam"];
+                /**
                  * @description Identify the country of the address to verify. Defaults to United States (USA)
                  * @example usa
                  */
@@ -9853,7 +9878,9 @@ export interface operations {
                  *     Comma-separated list of datasets to search within.
                  *
                  *     Filters results to only include addresses from the specified datasets. Useful for keys with multiple overlapping datasets enabled (e.g. `paf` and `abp`).
-                 * @example usps
+                 * @example [
+                 *       "usps"
+                 *     ]
                  */
                 dataset?: components["parameters"]["DatasetParam"];
                 /**
@@ -10070,6 +10097,16 @@ export interface operations {
                  * @example foo,bar
                  */
                 tags?: components["parameters"]["TagsParam"];
+                /**
+                 * @description **Remove Firm**
+                 *
+                 *     Removes firm names from the address lines (`line_1`, `line_2`, ...). Outside the USA this covers organization and department names. Remaining lines move up. Useful when delivering to people rather than businesses.
+                 *
+                 *     Set `remove_firm=true` to enable.
+                 *
+                 *     Firm fields and the `native` record are unchanged. If removing the firm would leave no address lines, it is kept and the lines are returned unchanged. Building names are not removed.
+                 */
+                remove_firm?: components["parameters"]["RemoveFirmParam"];
             };
             header?: never;
             path: {
@@ -10259,14 +10296,14 @@ export interface operations {
     ListLicensees: {
         parameters: {
             query?: {
-                /** @description ID of the licensee after which to list results */
-                starting_after?: number;
+                /** @description ID of the licensee after which to list results. Pass the `id` of the last licensee on the previous page. */
+                starting_after?: string;
                 /**
                  * @description **Management Key**
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10326,7 +10363,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10379,7 +10416,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10435,7 +10472,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10495,7 +10532,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10566,7 +10603,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10622,7 +10659,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10671,7 +10708,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10777,7 +10814,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx
@@ -10846,7 +10883,7 @@ export interface operations {
                  *
                  *     A secret key used to manage your account and API Keys. It was previously called the user token.
                  *
-                 *     Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+                 *     Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
                  *
                  *     Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
                  * @example uk_B59ScW1p1HHouf1VqclEPZUx

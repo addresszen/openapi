@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.3.0 (2026-11-26)
+
+### Minor Changes
+
+- Add `remove_firm` to address retrieval and verification
+- Type `starting_after` on the licensee list as a string, matching licensee `id`
+- Type whole-number counts as `integer`
+- Wording fixes: ZIP+4, personally identifiable information and the Management Key link
+
 ## 4.2.0 (2026-10-22)
 
 ### Minor Changes

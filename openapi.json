@@ -1,14 +1,14 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "version": "4.2.0",
+    "version": "4.3.0",
     "license": {
       "name": "Copyright (C) IDDQD Limited - All Rights Reserved",
       "url": "https://terms.addresszen.com"
     },
     "title": "API Reference",
     "termsOfService": "https://terms.addresszen.com",
-    "description": "## Getting Started\n\nAll API methods are either a `GET`, `POST` or `OPTIONS` request.\n\nThe API communicates over both HTTPS and plain HTTP using IPv4 and IPv6.\n\nWe use appropriate HTTP status codes where possible to indicate the request status. Every error body also carries a numeric `code`. The [error codes guide](https://docs.addresszen.com/docs/guides/error-codes) lists each code and how to fix it.\n\n## OpenAPI Spec\n\nOur OpenAPI specification is available at:\n\n- [npm package](https://www.npmjs.com/package/@addresszen/openapi)\n- [API Reference](https://openapi.addresszen.com)\n- [OpenAPI v3 JSON File](https://openapi.addresszen.com/openapi.json)\n- [OpenAPI v3 YAML File](https://openapi.addresszen.com/openapi.yaml)\n\n## Rate Limiting\n\nEach IP address is rate limited at 30 requests per second. Exceeding the limit returns a 503 response.\n\nThe autocomplete API has an additional rate limit.\n\nIf you expect to exceed the limit, contact us and we can move you to an endpoint with a higher limit.\n\n## Authentication\n\nMost requests need an **API key**. Send it as a Bearer token in the `Authorization` header:\n\n```\ncurl 'https://api.addresszen.com/v1/autocomplete/addresses?q=parkside' \\\n  -H 'Authorization: Bearer ak_test'\n```\n\nA header keeps the key out of URLs and server logs.\n\nTwo credentials exist, and they do different jobs:\n\n| Credential | Looks like | Authenticates | Exposure |\n| --- | --- | --- | --- |\n| API Key | `ak_test` | Address, postcode and place lookups. Every billable request | Usable in a browser. Restrict it with allowed URLs |\n| Management Key | `uk_...` | Managing a key under `/keys/{key}`: usage, licensees, configs | Secret. Server side only |\n\nRequests that manage a key, under `/keys/{key}`, take your **Management Key** instead: `Authorization: Bearer uk_...`. The API key is already in the path. The management key was previously called the user token.\n\nTo bill a request to a licensee, send the licensee key as the Bearer token: `Authorization: Bearer sl_...`.\n\nIf you cannot set headers, for example in some browser integrations, pass the key as `api_key` in the query string (or the management key as `user_token`):\n\n```\napi.addresszen.com/v1/autocomplete/addresses?api_key=ak_test&q=parkside\n```\n\nThe query string takes precedence when both are present.\n\nThe older `Authorization: api_key=\"ak_test\"` form still works but is deprecated. Use Bearer in new integrations.\n\n## Versioning\n\nThis API is versioned with a simple prefix in the URL. The current version is `/v1/`. We will maintain backwards-compatibility by releasing breaking changes under a new version.\n\nThe following changes are backwards-compatible:\n\n- Adding new properties to existing API responses\n- Adding new API endpoints\n- Adding new optional request parameters to existing API endpoints\n- Changing the order of properties in existing API responses\n- Changing the autocomplete address suggestion format\n\n## Error Handling\n\nA successful lookup returns an HTTP status code of 200 and a response code of 2000 in the body.\n\nAny other status code means an error. These range from a benign 404 (resource not found) to more urgent problems, such as an API Key out of credit or a failed authentication.\n\n## Testing\n\nTo test the API, create an account. Each new account comes with a free test balance. Contact us if you need more for testing and integration.\n\nThe code samples in this reference use the `ak_test` key. You can use it too, but it is capped at 5 requests per day.\n\n## Metadata\n\nYou can annotate requests that affect your balance with arbitrary metadata. We store it with your lookup history, and you can query it later via the API or the dashboard. We call the ability to label your requests [tagging](https://docs.addresszen.com/docs/guides/tags).\n\n## Response Codes\n\nThe API returns two indicators to help you determine the status of each HTTP request.\n\nThe first is the **HTTP Status**, which is found in the status line of every HTTP response. The API will return status codes that adhere to HTTP/1.1 Specifications wherever possible.\n\n`2XX` status codes indicate success while `4XX` and `5XX` indicate client and server errors respectively.\n\nThe second is the **API response code**, which can be found in the `code` property of the response body. This code gives a more specific reason for a failure and points you in the right direction when debugging.\n",
+    "description": "## Getting Started\n\nAll API methods are either a `GET`, `POST` or `OPTIONS` request.\n\nThe API communicates over both HTTPS and plain HTTP using IPv4 and IPv6.\n\nWe use appropriate HTTP status codes where possible to indicate the request status. Every error body also carries a numeric `code`. The [error codes guide](https://docs.addresszen.com/docs/guides/error-codes) lists each code and how to fix it.\n\n## OpenAPI Spec\n\nOur OpenAPI specification is available at:\n\n- [npm package](https://www.npmjs.com/package/@addresszen/openapi)\n- [API Reference](https://openapi.addresszen.com)\n- [OpenAPI v3 JSON File](https://openapi.addresszen.com/openapi.json)\n- [OpenAPI v3 YAML File](https://openapi.addresszen.com/openapi.yaml)\n\n## Rate Limiting\n\nEach IP address is rate limited at 30 requests per second. Exceeding the limit returns a 503 response.\n\nThe autocomplete API has an additional rate limit.\n\nIf you expect to exceed the limit, contact us and we can move you to an endpoint with a higher limit.\n\n## Authentication\n\nMost requests need an **API key**. Send it as a Bearer token in the `Authorization` header:\n\n```\ncurl 'https://api.addresszen.com/v1/autocomplete/addresses?q=parkside' \\\n  -H 'Authorization: Bearer ak_test'\n```\n\nA header keeps the key out of URLs and server logs.\n\nTwo credentials exist, and they do different jobs:\n\n| Credential | Looks like | Authenticates | Exposure |\n| --- | --- | --- | --- |\n| API Key | `ak_test` | Address, postcode and place lookups. Every billable request | Usable in a browser. Restrict it with allowed URLs |\n| Management Key | `uk_...` | Managing a key under `/keys/{key}`: usage, licensees, configs | Secret. Server side only |\n\nRequests that manage a key, under `/keys/{key}`, take your **Management Key** instead: `Authorization: Bearer uk_...`. The API key is already in the path. The management key was previously called the user token.\n\nTo bill a request to a licensee, send the licensee key as the Bearer token: `Authorization: Bearer sl_...`.\n\nIf you cannot set headers, for example in some browser integrations, pass the key as `api_key` in the query string (or the management key as `user_token`):\n\n```\napi.addresszen.com/v1/autocomplete/addresses?api_key=ak_test&q=parkside\n```\n\nThe query string takes precedence when both are present.\n\nThe older `Authorization: api_key=\"ak_test\"` form still works but is deprecated. Use Bearer in new integrations.\n\n## Versioning\n\nThis API is versioned with a simple prefix in the URL. The current version is `/v1/`. We will maintain backwards-compatibility by releasing breaking changes under a new version.\n\nThe following changes are backwards-compatible:\n\n- Adding new properties to existing API responses\n- Adding new API endpoints\n- Adding new optional request parameters to existing API endpoints\n- Changing the order of properties in existing API responses\n- Changing the autocomplete address suggestion format\n\n## Error Handling\n\nA successful lookup returns an HTTP status code of 200 and a response code of 2000 in the body.\n\nAny other status code means an error. These range from a benign 404 (resource not found) to more urgent problems, such as an API Key out of credit or a failed authentication.\n\n## Testing\n\nTo test the API, create an account. Each new account comes with a free test balance. Contact us if you need more for testing and integration.\n\nThe code samples in this reference use the `ak_test` key. You can use it too, but it is capped at 5 requests per day.\n\n## Metadata\n\nYou can annotate requests that affect your balance with arbitrary metadata. We store it with your lookup history, and you can query it later via the API or the dashboard. We call the ability to label your requests [tagging](https://docs.addresszen.com/docs/guides/tag-and-track).\n\n## Response Codes\n\nThe API returns two indicators to help you determine the status of each HTTP request.\n\nThe first is the **HTTP Status**, which is found in the status line of every HTTP response. The API will return status codes that adhere to HTTP/1.1 Specifications wherever possible.\n\n`2XX` status codes indicate success while `4XX` and `5XX` indicate client and server errors respectively.\n\nThe second is the **API response code**, which can be found in the `code` property of the response body. This code gives a more specific reason for a failure and points you in the right direction when debugging.\n",
     "contact": {
       "email": "support@addresszen.com",
       "name": "Support",
@@ -51,12 +51,12 @@
     {
       "name": "suggestion",
       "x-displayName": "Address Suggestion",
-      "description": "Address Suggestions are simple, human readable representations of an address. This format is sufficient for a user to determine an address match in an address autocomplete interface. A second request must be made to the API to gather fully validated address.\n\nSee our Address Search APIs for more information on address autocompletion.\n\n<SchemaDefinition schemaRef=\"#/components/schemas/AddressSuggestion\" />\n"
+      "description": "Address Suggestions are simple, human-readable representations of an address. This format is sufficient for a user to determine an address match in an address autocomplete interface. A second request must be made to the API to gather a fully validated address.\n\nSee our Address Search APIs for more information on address autocompletion.\n\n<SchemaDefinition schemaRef=\"#/components/schemas/AddressSuggestion\" />\n"
     },
     {
       "name": "usps_native",
-      "x-displayName": "USPS Zip+4",
-      "description": "Raw USPS Zip+4 record.\n\n<SchemaDefinition schemaRef=\"#/components/schemas/UspsAddress\" />\n"
+      "x-displayName": "USPS ZIP+4",
+      "description": "Raw USPS ZIP+4 record.\n\n<SchemaDefinition schemaRef=\"#/components/schemas/UspsAddress\" />\n"
     },
     {
       "name": "ecaf_address",
@@ -492,7 +492,7 @@
         ],
         "summary": "Logs (CSV)",
         "operationId": "KeyLogs",
-        "description": "Returns a CSV of the charged lookups made on a key, one row per request.\n\nRequires the account Management Key. The maximum interval is 90 days. Without a start or end date the interval is the last 21 days.\n\nThe response is `text/csv` and downloads as an attachment. A non-200 response reverts to JSON, with the error code and message in the body.\n\n## CSV format\n\nThe CSV has no header row. Columns, in order:\n\n1. Timestamp (ISO 8601)\n2. IP address the request was received from\n3. Search term\n4. URL the request originated from\n5. Lookup type\n6. Tags\n7. Lookups consumed\n8. Licensee name (sublicensing keys only)\n9. Source IP address\n\nThe source IP column carries the address forwarded in the `AZ-Source-IP` header. We record it only for keys with IP address forwarding enabled, and only when the header holds a valid IP address. It is empty otherwise.\n\n## Data redaction\n\nWe redact personally identifiable data (PII) in your usage log weekly, covering the IP, source IP, search term and URL columns.\n\nThe default retention is 28 days. Change the period from your dashboard. Set it to `0` days to stop collecting PII altogether.\n",
+        "description": "Returns a CSV of the charged lookups made on a key, one row per request.\n\nRequires the account Management Key. The maximum interval is 90 days. Without a start or end date the interval is the last 21 days.\n\nThe response is `text/csv` and downloads as an attachment. A non-200 response reverts to JSON, with the error code and message in the body.\n\n## CSV format\n\nThe CSV has no header row. Columns, in order:\n\n1. Timestamp (ISO 8601)\n2. IP address the request was received from\n3. Search term\n4. URL the request originated from\n5. Lookup type\n6. Tags\n7. Lookups consumed\n8. Licensee name (sublicensing keys only)\n9. Source IP address\n\nThe source IP column carries the address forwarded in the `AZ-Source-IP` header. We record it only for keys with IP address forwarding enabled, and only when the header holds a valid IP address. It is empty otherwise.\n\n## Data redaction\n\nWe redact personally identifiable information (PII) in your usage log weekly, covering the IP, source IP, search term and URL columns.\n\nThe default retention is 28 days. Change the period from your dashboard. Set it to `0` days to stop collecting PII altogether.\n",
         "security": [
           {
             "ManagementKey": []
@@ -592,6 +592,9 @@
           },
           {
             "$ref": "#/components/parameters/TagsParam"
+          },
+          {
+            "$ref": "#/components/parameters/RemoveFirmParam"
           },
           {
             "name": "context",
@@ -695,7 +698,7 @@
           "Address Search"
         ],
         "summary": "Find Address",
-        "description": "Returns address suggestions for a partial address, ranked by relevance. Use it to autofill an address form as the user types.\n\nA suggestion is a display label and an `id`, not a full address. Retrieve the address with a second request to `/autocomplete/addresses/{id}/usa`. That second request is the one which decrements your lookup balance.\n\nAutocomplete is not a free standalone resource. We rate limit, then suspend, keys that autocomplete without resolving suggestions.\n\nOur address autocomplete JavaScript libraries add this to a form without calling the API directly.\n\n## Coverage\n\nEach search runs in one country, selected with `context`. A missing or unrecognized `context` falls back to your account default. Results come from the datasets enabled on your key: USPS Zip+4 for the US and its territories, and the country datasets you license elsewhere. Where a key has more than one dataset for a country, `dataset` narrows the search.\n\n## Filters\n\nFilters restrict results, e.g. `state_code=NY` searches New York only. A filter which matches no address returns an empty set. An unrecognized filter name is ignored. Neither affects your lookup balance.\n\nFilters combine with `AND` logic, so `state_code=CA&city=San Francisco` requires both. A comma-separated value combines terms for one filter, e.g. `postal_code_3=11225,11226,11238` accepts any of the three ZIP codes. Unless a parameter states otherwise, every filter takes multiple terms. The maximum is 10 filter terms.\n\n## Address bias\n\nBias terms carry the `bias_` prefix and promote addresses rather than restricting the set, so unmatched addresses still appear, lower down. For example, `bias_state_code=NY,NJ` favors addresses in New York and New Jersey, `bias_lonlat` favors addresses near a point. Invalid bias terms have no effect. Multiple bias terms are allowed unless stated otherwise, with a combined maximum of 5.\n\n## Suggestion format\n\nThe suggestion string is subject to change. Present it to the user as it arrives rather than parsing it.\n\n## Rate limiting and cost\n\nThe default rate limit is 3,000 requests per 5 minutes, counted per API key and IP address. The `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers report the current window.\n\nAutocomplete requests do not draw on your balance. Resolving a suggestion to a full address does.\n",
+        "description": "Returns address suggestions for a partial address, ranked by relevance. Use it to autofill an address form as the user types.\n\nA suggestion is a display label and an `id`, not a full address. Retrieve the address with a second request to `/autocomplete/addresses/{id}/usa`. That second request is the one which decrements your lookup balance.\n\nAutocomplete is not a free standalone resource. We rate limit, then suspend, keys that autocomplete without resolving suggestions.\n\nOur address autocomplete JavaScript libraries add this to a form without calling the API directly.\n\n## Coverage\n\nEach search runs in one country, selected with `context`. A missing or unrecognized `context` falls back to your account default. Results come from the datasets enabled on your key: USPS ZIP+4 for the US and its territories, and the country datasets you license elsewhere. Where a key has more than one dataset for a country, `dataset` narrows the search.\n\n## Filters\n\nFilters restrict results, e.g. `state_code=NY` searches New York only. A filter which matches no address returns an empty set. An unrecognized filter name is ignored. Neither affects your lookup balance.\n\nFilters combine with `AND` logic, so `state_code=CA&city=San Francisco` requires both. A comma-separated value combines terms for one filter, e.g. `postal_code_3=11225,11226,11238` accepts any of the three ZIP codes. Unless a parameter states otherwise, every filter takes multiple terms. The maximum is 10 filter terms.\n\n## Address bias\n\nBias terms carry the `bias_` prefix and promote addresses rather than restricting the set, so unmatched addresses still appear, lower down. For example, `bias_state_code=NY,NJ` favors addresses in New York and New Jersey, and `bias_lonlat` favors addresses near a point. Invalid bias terms have no effect. Multiple bias terms are allowed unless stated otherwise, with a combined maximum of 5.\n\n## Suggestion format\n\nThe suggestion string is subject to change. Present it to the user as it arrives rather than parsing it.\n\n## Rate limiting and cost\n\nThe default rate limit is 3,000 requests per 5 minutes, counted per API key and IP address. The `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers report the current window.\n\nAutocomplete requests do not draw on your balance. Resolving a suggestion to a full address does.\n",
         "operationId": "FindAddress",
         "security": [
           {
@@ -963,6 +966,9 @@
           },
           {
             "$ref": "#/components/parameters/TagsParam"
+          },
+          {
+            "$ref": "#/components/parameters/RemoveFirmParam"
           }
         ],
         "responses": {
@@ -1413,32 +1419,32 @@
           {
             "lang": "http",
             "label": "URL",
-            "source": "https://api.addresszen.com/v1/places/geonames_5353?api_key=ak_test\n"
+            "source": "https://api.addresszen.com/v1/places/geonames_2643743?api_key=ak_test\n"
           },
           {
             "lang": "cURL",
             "label": "curl",
-            "source": "curl -G 'https://api.addresszen.com/v1/places/geonames_5353' \\\n  -d 'api_key=ak_test'\n"
+            "source": "curl -G 'https://api.addresszen.com/v1/places/geonames_2643743' \\\n  -d 'api_key=ak_test'\n"
           },
           {
             "lang": "JavaScript",
             "label": "JavaScript",
-            "source": "import { createZenClient, resolvePlace } from '@addresszen/sdk';\n\nconst client = createZenClient({ apiKey: 'ak_test' });\n\nconst { data } = await resolvePlace({\n  client,\n  path: { place: 'geonames_5353' },\n});\n"
+            "source": "import { createZenClient, resolvePlace } from '@addresszen/sdk';\n\nconst client = createZenClient({ apiKey: 'ak_test' });\n\nconst { data } = await resolvePlace({\n  client,\n  path: { place: 'geonames_2643743' },\n});\n"
           },
           {
             "lang": "Python",
             "label": "Python",
-            "source": "# pip install addresszen\nfrom addresszen import AddressZen\n\nwith AddressZen(\"ak_test\") as client:\n    result = client.resolve_place(\"geonames_5353\")\n"
+            "source": "# pip install addresszen\nfrom addresszen import AddressZen\n\nwith AddressZen(\"ak_test\") as client:\n    result = client.resolve_place(\"geonames_2643743\")\n"
           },
           {
             "lang": "Ruby",
             "label": "Ruby",
-            "source": "require \"net/http\"\nrequire \"json\"\n\nuri = URI(\"https://api.addresszen.com/v1/places/geonames_5353\")\nuri.query = URI.encode_www_form(api_key: \"ak_test\")\nresult = JSON.parse(Net::HTTP.get(uri))[\"result\"]\n"
+            "source": "require \"net/http\"\nrequire \"json\"\n\nuri = URI(\"https://api.addresszen.com/v1/places/geonames_2643743\")\nuri.query = URI.encode_www_form(api_key: \"ak_test\")\nresult = JSON.parse(Net::HTTP.get(uri))[\"result\"]\n"
           },
           {
             "lang": "PHP",
             "label": "PHP",
-            "source": "<?php\n$response = file_get_contents(\n  \"https://api.addresszen.com/v1/places/geonames_5353?\" .\n  http_build_query([\n    \"api_key\" => \"ak_test\",\n  ])\n);\n$result = json_decode($response, true)[\"result\"];\n"
+            "source": "<?php\n$response = file_get_contents(\n  \"https://api.addresszen.com/v1/places/geonames_2643743?\" .\n  http_build_query([\n    \"api_key\" => \"ak_test\",\n  ])\n);\n$result = json_decode($response, true)[\"result\"];\n"
           }
         ]
       }
@@ -1463,12 +1469,11 @@
           {
             "name": "starting_after",
             "in": "query",
-            "description": "ID of the licensee after which to list results",
+            "description": "ID of the licensee after which to list results. Pass the `id` of the last licensee on the previous page.",
             "style": "form",
             "explode": false,
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string"
             }
           },
           {
@@ -1748,7 +1753,7 @@
                       ],
                       "properties": {
                         "deleted": {
-                          "type": "number",
+                          "type": "integer",
                           "format": "int32",
                           "example": 1,
                           "minimum": 0
@@ -2254,7 +2259,7 @@
                       ],
                       "properties": {
                         "deleted": {
-                          "type": "number",
+                          "type": "integer",
                           "format": "int32",
                           "example": 1,
                           "minimum": 0
@@ -3021,7 +3026,7 @@
           "type": "string"
         },
         "name": "user_token",
-        "description": "**Management Key**\n\nA secret key used to manage your account and API Keys. It was previously called the user token.\n\nYour management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).\n\nTypically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token=\"uk_...\"` header also works.\n",
+        "description": "**Management Key**\n\nA secret key used to manage your account and API Keys. It was previously called the user token.\n\nYour management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).\n\nTypically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token=\"uk_...\"` header also works.\n",
         "example": "uk_B59ScW1p1HHouf1VqclEPZUx"
       },
       "StartParam": {
@@ -3082,6 +3087,20 @@
         },
         "style": "form"
       },
+      "RemoveFirmParam": {
+        "name": "remove_firm",
+        "in": "query",
+        "style": "form",
+        "explode": false,
+        "required": false,
+        "description": "**Remove Firm**\n\nRemoves firm names from the address lines (`line_1`, `line_2`, ...). Outside the USA this covers organization and department names. Remaining lines move up. Useful when delivering to people rather than businesses.\n\nSet `remove_firm=true` to enable.\n\nFirm fields and the `native` record are unchanged. If removing the firm would leave no address lines, it is kept and the lines are returned unchanged. Building names are not removed.\n",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "true"
+          ]
+        }
+      },
       "DatasetParam": {
         "name": "dataset",
         "in": "query",
@@ -3094,7 +3113,9 @@
           }
         },
         "description": "**Filter by Dataset**\n\nComma-separated list of datasets to search within.\n\nFilters results to only include addresses from the specified datasets. Useful for keys with multiple overlapping datasets enabled (e.g. `paf` and `abp`).\n",
-        "example": "usps"
+        "example": [
+          "usps"
+        ]
       },
       "ContextParam": {
         "name": "context",
@@ -4508,7 +4529,7 @@
           },
           "dpv_no_stat": {
             "type": "string",
-            "description": "Delivery Point Validation (DPV) NoStat code.\n\nIndicates whether the address is a vacant property, it receives mail as a part of a drop, or it does not have an established delivery yet.\n\nPossible values:\n- 'Y'\tConfirmed\n- 'N'\tNot confirmed\n- '' Empty string if address is not DPV validated.\n",
+            "description": "Delivery Point Validation (DPV) NoStat code.\n\nIndicates whether the address is a vacant property, it receives mail as a part of a drop or it does not have an established delivery yet.\n\nPossible values:\n- 'Y'\tConfirmed\n- 'N'\tNot confirmed\n- '' Empty string if address is not DPV validated.\n",
             "enum": [
               "Y",
               "N",
@@ -6608,7 +6629,7 @@
             "type": "string",
             "maxLength": 6,
             "nullable": true,
-            "description": "Current AddressBase classification code (e.g. `RD` residential,\n`CR` commercial retail). Top-level categories: `R` Residential,\n`C` Commercial, `L` Land, `M` Military, `O` Other, `P` Parent shell,\n`U` Unclassified, `X` Dual use, `Z` Object of interest. NULL when no\ncurrent classification row exists for the UPRN.\n"
+            "description": "Current AddressBase classification code, passed through verbatim at\nwhatever level the custodian recorded. Usually tertiary (e.g. `RD03`\nsemi-detached, `RD04` terraced, `RD06` self-contained flat, `CR01`\nretail), but can be quaternary (`LP03PA`), secondary (`RD`) or primary\n(`C`). Match on prefix rather than equality. Top-level categories: `R` Residential,\n`C` Commercial, `L` Land, `M` Military, `O` Other, `P` Parent shell,\n`U` Unclassified, `X` Dual use, `Z` Object of interest. NULL when no\ncurrent classification row exists for the UPRN.\n"
           },
           "class_scheme": {
             "title": "Classification Scheme",
@@ -14150,7 +14171,7 @@
           "city_state_name_facility_code": {
             "title": "City State Name Facility Code",
             "type": "string",
-            "description": "The type of locale identified in the city/state name. The facility may be a USPS facility, such as a post office, station or branch, or a non-postal place name.\n\n- B = Branch\n- C = Community post office (CPO)\n- N = Non-postal community name, former USPS facility, or place name\n- P = Post Office\n- S = Station\n- U = Urbanization",
+            "description": "The type of locale identified in the city/state name. The facility may be a USPS facility, such as a post office, station or branch, or a non-postal place name.\n\n- B = Branch\n- C = Community post office (CPO)\n- N = Non-postal community name, former USPS facility or place name\n- P = Post Office\n- S = Station\n- U = Urbanization",
             "enum": [
               "B",
               "C",
@@ -14323,14 +14344,14 @@
             ]
           },
           "count": {
-            "type": "number",
+            "type": "integer",
             "description": "The number of addresses we matched to the input. We return the closest match by default.\n",
             "maximum": 10,
             "minimum": 0
           },
           "fit": {
             "type": "number",
-            "description": "A score represented as number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements.\n",
+            "description": "A score represented as a number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements.\n",
             "maximum": 1,
             "minimum": 0
           },
@@ -14338,7 +14359,7 @@
             "type": "number",
             "maximum": 1,
             "minimum": 0,
-            "description": "A confidence score represented as number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements.\n"
+            "description": "A confidence score represented as a number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements.\n"
           },
           "match_information": {
             "type": "string",
@@ -14423,7 +14444,7 @@
             ]
           },
           "count": {
-            "type": "number",
+            "type": "integer",
             "description": "",
             "enum": [
               0
@@ -14619,11 +14640,7 @@
             ]
           },
           "result": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Address"
-              }
-            ]
+            "$ref": "#/components/schemas/Address"
           }
         }
       },
@@ -15137,7 +15154,7 @@
               "count": {
                 "example": 232,
                 "minimum": 0,
-                "type": "number",
+                "type": "integer",
                 "format": "int32",
                 "description": "The number of lookups performed by the licensee on the day represented by `licensees.daily.updatedAt`"
               },

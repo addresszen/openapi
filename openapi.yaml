@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  version: 4.2.0
+  version: 4.3.0
   license:
     name: Copyright (C) IDDQD Limited - All Rights Reserved
     url: https://terms.addresszen.com
@@ -90,7 +90,7 @@ info:
 
     ## Metadata
 
-    You can annotate requests that affect your balance with arbitrary metadata. We store it with your lookup history, and you can query it later via the API or the dashboard. We call the ability to label your requests [tagging](https://docs.addresszen.com/docs/guides/tags).
+    You can annotate requests that affect your balance with arbitrary metadata. We store it with your lookup history, and you can query it later via the API or the dashboard. We call the ability to label your requests [tagging](https://docs.addresszen.com/docs/guides/tag-and-track).
 
     ## Response Codes
 
@@ -137,15 +137,15 @@ tags:
   - name: suggestion
     x-displayName: Address Suggestion
     description: |
-      Address Suggestions are simple, human readable representations of an address. This format is sufficient for a user to determine an address match in an address autocomplete interface. A second request must be made to the API to gather fully validated address.
+      Address Suggestions are simple, human-readable representations of an address. This format is sufficient for a user to determine an address match in an address autocomplete interface. A second request must be made to the API to gather a fully validated address.
 
       See our Address Search APIs for more information on address autocompletion.
 
       <SchemaDefinition schemaRef="#/components/schemas/AddressSuggestion" />
   - name: usps_native
-    x-displayName: USPS Zip+4
+    x-displayName: USPS ZIP+4
     description: |
-      Raw USPS Zip+4 record.
+      Raw USPS ZIP+4 record.
 
       <SchemaDefinition schemaRef="#/components/schemas/UspsAddress" />
   - name: ecaf_address
@@ -645,7 +645,7 @@ paths:
 
         ## Data redaction
 
-        We redact personally identifiable data (PII) in your usage log weekly, covering the IP, source IP, search term and URL columns.
+        We redact personally identifiable information (PII) in your usage log weekly, covering the IP, source IP, search term and URL columns.
 
         The default retention is 28 days. Change the period from your dashboard. Set it to `0` days to stop collecting PII altogether.
       security:
@@ -753,6 +753,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ApiKeyParam'
         - $ref: '#/components/parameters/TagsParam'
+        - $ref: '#/components/parameters/RemoveFirmParam'
         - name: context
           in: query
           schema:
@@ -883,7 +884,7 @@ paths:
 
         ## Coverage
 
-        Each search runs in one country, selected with `context`. A missing or unrecognized `context` falls back to your account default. Results come from the datasets enabled on your key: USPS Zip+4 for the US and its territories, and the country datasets you license elsewhere. Where a key has more than one dataset for a country, `dataset` narrows the search.
+        Each search runs in one country, selected with `context`. A missing or unrecognized `context` falls back to your account default. Results come from the datasets enabled on your key: USPS ZIP+4 for the US and its territories, and the country datasets you license elsewhere. Where a key has more than one dataset for a country, `dataset` narrows the search.
 
         ## Filters
 
@@ -893,7 +894,7 @@ paths:
 
         ## Address bias
 
-        Bias terms carry the `bias_` prefix and promote addresses rather than restricting the set, so unmatched addresses still appear, lower down. For example, `bias_state_code=NY,NJ` favors addresses in New York and New Jersey, `bias_lonlat` favors addresses near a point. Invalid bias terms have no effect. Multiple bias terms are allowed unless stated otherwise, with a combined maximum of 5.
+        Bias terms carry the `bias_` prefix and promote addresses rather than restricting the set, so unmatched addresses still appear, lower down. For example, `bias_state_code=NY,NJ` favors addresses in New York and New Jersey, and `bias_lonlat` favors addresses near a point. Invalid bias terms have no effect. Multiple bias terms are allowed unless stated otherwise, with a combined maximum of 5.
 
         ## Suggestion format
 
@@ -1106,6 +1107,7 @@ paths:
         - $ref: '#/components/parameters/LicenseeParam'
         - $ref: '#/components/parameters/FilterParam'
         - $ref: '#/components/parameters/TagsParam'
+        - $ref: '#/components/parameters/RemoveFirmParam'
       responses:
         '200':
           description: Success
@@ -1529,11 +1531,11 @@ paths:
         - lang: http
           label: URL
           source: |
-            https://api.addresszen.com/v1/places/geonames_5353?api_key=ak_test
+            https://api.addresszen.com/v1/places/geonames_2643743?api_key=ak_test
         - lang: cURL
           label: curl
           source: |
-            curl -G 'https://api.addresszen.com/v1/places/geonames_5353' \
+            curl -G 'https://api.addresszen.com/v1/places/geonames_2643743' \
               -d 'api_key=ak_test'
         - lang: JavaScript
           label: JavaScript
@@ -1544,7 +1546,7 @@ paths:
 
             const { data } = await resolvePlace({
               client,
-              path: { place: 'geonames_5353' },
+              path: { place: 'geonames_2643743' },
             });
         - lang: Python
           label: Python
@@ -1553,14 +1555,14 @@ paths:
             from addresszen import AddressZen
 
             with AddressZen("ak_test") as client:
-                result = client.resolve_place("geonames_5353")
+                result = client.resolve_place("geonames_2643743")
         - lang: Ruby
           label: Ruby
           source: |
             require "net/http"
             require "json"
 
-            uri = URI("https://api.addresszen.com/v1/places/geonames_5353")
+            uri = URI("https://api.addresszen.com/v1/places/geonames_2643743")
             uri.query = URI.encode_www_form(api_key: "ak_test")
             result = JSON.parse(Net::HTTP.get(uri))["result"]
         - lang: PHP
@@ -1568,7 +1570,7 @@ paths:
           source: |
             <?php
             $response = file_get_contents(
-              "https://api.addresszen.com/v1/places/geonames_5353?" .
+              "https://api.addresszen.com/v1/places/geonames_2643743?" .
               http_build_query([
                 "api_key" => "ak_test",
               ])
@@ -1587,12 +1589,11 @@ paths:
         - $ref: '#/components/parameters/ApiKeyPathParam'
         - name: starting_after
           in: query
-          description: ID of the licensee after which to list results
+          description: ID of the licensee after which to list results. Pass the `id` of the last licensee on the previous page.
           style: form
           explode: false
           schema:
-            type: integer
-            format: int32
+            type: string
         - $ref: '#/components/parameters/UserTokenParam'
         - $ref: '#/components/parameters/LimitParam'
         - name: query
@@ -1890,7 +1891,7 @@ paths:
                       - deleted
                     properties:
                       deleted:
-                        type: number
+                        type: integer
                         format: int32
                         example: 1
                         minimum: 0
@@ -2404,7 +2405,7 @@ paths:
                       - deleted
                     properties:
                       deleted:
-                        type: number
+                        type: integer
                         format: int32
                         example: 1
                         minimum: 0
@@ -3165,7 +3166,7 @@ components:
 
         A secret key used to manage your account and API Keys. It was previously called the user token.
 
-        Your management key can be retrieved and managed from your [accounts page](https://addresszen.com/account).
+        Your management key can be retrieved and managed from your [accounts page](https://account.addresszen.com/tokens).
 
         Typically begins `uk_`. Prefer sending it in the `Authorization` header as `Bearer uk_...` instead of this query parameter. The `Authorization: user_token="uk_..."` header also works.
       example: uk_B59ScW1p1HHouf1VqclEPZUx
@@ -3238,6 +3239,24 @@ components:
       schema:
         type: string
       style: form
+    RemoveFirmParam:
+      name: remove_firm
+      in: query
+      style: form
+      explode: false
+      required: false
+      description: |
+        **Remove Firm**
+
+        Removes firm names from the address lines (`line_1`, `line_2`, ...). Outside the USA this covers organization and department names. Remaining lines move up. Useful when delivering to people rather than businesses.
+
+        Set `remove_firm=true` to enable.
+
+        Firm fields and the `native` record are unchanged. If removing the firm would leave no address lines, it is kept and the lines are returned unchanged. Building names are not removed.
+      schema:
+        type: string
+        enum:
+          - 'true'
     DatasetParam:
       name: dataset
       in: query
@@ -3253,7 +3272,8 @@ components:
         Comma-separated list of datasets to search within.
 
         Filters results to only include addresses from the specified datasets. Useful for keys with multiple overlapping datasets enabled (e.g. `paf` and `abp`).
-      example: usps
+      example:
+        - usps
     ContextParam:
       name: context
       in: query
@@ -4559,7 +4579,7 @@ components:
             - 'U1' Unique 5-digit ZIP code.
         dpv_no_stat:
           type: string
-          description: "Delivery Point Validation (DPV) NoStat code.\n\nIndicates whether the address is a vacant property, it receives mail as a part of a drop, or it does not have an established delivery yet.\n\nPossible values:\n- 'Y'\tConfirmed\n- 'N'\tNot confirmed\n- '' Empty string if address is not DPV validated.\n"
+          description: "Delivery Point Validation (DPV) NoStat code.\n\nIndicates whether the address is a vacant property, it receives mail as a part of a drop or it does not have an established delivery yet.\n\nPossible values:\n- 'Y'\tConfirmed\n- 'N'\tNot confirmed\n- '' Empty string if address is not DPV validated.\n"
           enum:
             - 'Y'
             - 'N'
@@ -6612,8 +6632,11 @@ components:
           maxLength: 6
           nullable: true
           description: |
-            Current AddressBase classification code (e.g. `RD` residential,
-            `CR` commercial retail). Top-level categories: `R` Residential,
+            Current AddressBase classification code, passed through verbatim at
+            whatever level the custodian recorded. Usually tertiary (e.g. `RD03`
+            semi-detached, `RD04` terraced, `RD06` self-contained flat, `CR01`
+            retail), but can be quaternary (`LP03PA`), secondary (`RD`) or primary
+            (`C`). Match on prefix rather than equality. Top-level categories: `R` Residential,
             `C` Commercial, `L` Land, `M` Military, `O` Other, `P` Parent shell,
             `U` Unclassified, `X` Dual use, `Z` Object of interest. NULL when no
             current classification row exists for the UPRN.
@@ -14717,7 +14740,7 @@ components:
 
             - B = Branch
             - C = Community post office (CPO)
-            - N = Non-postal community name, former USPS facility, or place name
+            - N = Non-postal community name, former USPS facility or place name
             - P = Post Office
             - S = Station
             - U = Urbanization
@@ -14865,7 +14888,7 @@ components:
             - $ref: '#/components/schemas/UsaCassVerifiedAddress'
             - $ref: '#/components/schemas/Address'
         count:
-          type: number
+          type: integer
           description: |
             The number of addresses we matched to the input. We return the closest match by default.
           maximum: 10
@@ -14873,7 +14896,7 @@ components:
         fit:
           type: number
           description: |
-            A score represented as number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements.
+            A score represented as a number between 1 and 0. Fit compares the address elements present in your query against the matching address elements. It does not incorporate elements you have not presented in the score. A partial address (e.g. 123 Main St) will have a fit of 1 even though it is missing city and zip code. Its confidence score will be less than 1 however because it is missing some crucial elements.
           maximum: 1
           minimum: 0
         confidence:
@@ -14881,7 +14904,7 @@ components:
           maximum: 1
           minimum: 0
           description: |
-            A confidence score represented as number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements.
+            A confidence score represented as a number between 1 and 0. 1 indicates a full match. 0 indicates no complete matching elements.
         match_information:
           type: string
           description: |
@@ -14958,7 +14981,7 @@ components:
           enum:
             - null
         count:
-          type: number
+          type: integer
           description: ''
           enum:
             - 0
@@ -15105,8 +15128,7 @@ components:
           enum:
             - Success
         result:
-          allOf:
-            - $ref: '#/components/schemas/Address'
+          $ref: '#/components/schemas/Address'
     place_id:
       title: ID
       type: string
@@ -15542,7 +15564,7 @@ components:
             count:
               example: 232
               minimum: 0
-              type: number
+              type: integer
               format: int32
               description: The number of lookups performed by the licensee on the day represented by `licensees.daily.updatedAt`
             updatedAt:
